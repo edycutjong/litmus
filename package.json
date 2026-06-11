@@ -1,0 +1,30 @@
+{
+  "name": "dorahacks-croo-litmus",
+  "version": "0.1.0",
+  "description": "Output-grading quality gate agent — grades any deliverable 0-100 with a rubric, on-chain",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "stability": "tsx scripts/stability.ts",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["croo", "agent", "a2a", "grading", "quality"],
+  "license": "MIT",
+  "dependencies": {
+    "croo-core": "file:../dorahacks-croo-core"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0",
+    "eslint": "^9.0.0"
+  }
+}
