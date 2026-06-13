@@ -11,11 +11,9 @@
 // ─── Types ─────────────────────────────────────────────────────────
 
 export interface GradeRequest {
-  /** The text deliverable to grade. */
-  deliverable: string;
-  /** Optional custom rubric (default used if omitted). */
+  deliverable?: string;
+  fileKey?: string;
   rubric?: RubricCriterion[];
-  /** Optional context about the original request. */
   context?: string;
 }
 
@@ -59,6 +57,7 @@ export const DEFAULT_RUBRIC: RubricCriterion[] = [
  */
 export async function gradeDeliverable(request: GradeRequest): Promise<GradeVerdict> {
   const rubric = request.rubric ?? DEFAULT_RUBRIC;
+  const contentToGrade = request.deliverable ?? '';
 
   // Validate rubric weights sum to ~1.0
   const totalWeight = rubric.reduce((sum, c) => sum + c.weight, 0);
@@ -66,15 +65,65 @@ export async function gradeDeliverable(request: GradeRequest): Promise<GradeVerd
     throw new Error(`Rubric weights must sum to 1.0 (got ${totalWeight})`);
   }
 
-  const prompt = buildGradingPrompt(request.deliverable, rubric, request.context);
+  // Security / Anti-Gaming: Enforce Format/Clarity weight cap
+  const formatCrit = rubric.find(c => c.criterion.toLowerCase().includes('format') || c.criterion.toLowerCase().includes('clarity'));
+  if (formatCrit && formatCrit.weight > 0.151) {
+    throw new Error(`Security Violation: Format/Clarity weight cannot exceed 15% (got ${Math.round(formatCrit.weight * 100)}%)`);
+  }
 
-  // Call the LLM (pluggable — currently GPT-4o-mini for cost efficiency)
-  const response = await callLlmJudge(prompt);
+  const prompt = buildGradingPrompt(contentToGrade, rubric, request.context);
 
-  // Parse the structured response
-  const verdict = parseVerdictResponse(response, rubric);
+  const apiKeyOpenAI = process.env.OPENAI_API_KEY;
+  const apiKeyAnthropic = process.env.ANTHROPIC_API_KEY;
 
-  return verdict;
+  if (!apiKeyOpenAI && !apiKeyAnthropic) {
+    console.warn('[litmus/grader] No API keys — using mock mode');
+    return parseVerdictResponse(mockGrade(prompt, 62), rubric);
+  }
+
+  let v1: GradeVerdict;
+  let v2: GradeVerdict | undefined;
+
+  if (apiKeyOpenAI && apiKeyAnthropic) {
+    // True Tribunal Mode
+    const [res1, res2] = await Promise.all([
+      callOpenAI(prompt, apiKeyOpenAI),
+      callAnthropic(prompt, apiKeyAnthropic),
+    ]);
+    v1 = parseVerdictResponse(res1, rubric);
+    v2 = parseVerdictResponse(res2, rubric);
+  } else if (apiKeyAnthropic) {
+    // Single Model Execution (Optimal)
+    const res = await callAnthropic(prompt, apiKeyAnthropic);
+    v1 = parseVerdictResponse(res, rubric);
+  } else {
+    // Single Model Execution
+    const res = await callOpenAI(prompt, apiKeyOpenAI!);
+    v1 = parseVerdictResponse(res, rubric);
+  }
+
+  if (v2) {
+    const variance = Math.abs(v1.score - v2.score);
+    console.log(`[litmus/grader] Tribunal variance: ${variance} (V1: ${v1.score}, V2: ${v2.score})`);
+    
+    if (variance > 15) {
+      console.warn('[litmus/grader] High variance detected. Firing tiebreaker.');
+      const tiebreakerPrompt = prompt + '\n\nIMPORTANT: Previous judges disagreed significantly. Be extremely rigorous and penalize any unsubstantiated claims heavily.';
+      const res3 = apiKeyAnthropic 
+        ? await callAnthropic(tiebreakerPrompt, apiKeyAnthropic) 
+        : await callOpenAI(tiebreakerPrompt, apiKeyOpenAI!);
+      return parseVerdictResponse(res3, rubric);
+    }
+    
+    return {
+      ...v1,
+      score: Math.round((v1.score + v2.score) / 2),
+      gaps: Array.from(new Set([...v1.gaps, ...v2.gaps])).slice(0, 5),
+      confidence: 'medium',
+    };
+  }
+
+  return v1;
 }
 
 // ─── Prompt Construction ───────────────────────────────────────────
@@ -100,7 +149,7 @@ ${deliverable}
 ## Instructions
 1. Score each criterion 0-100.
 2. Calculate the weighted overall score.
-3. List 1-5 specific, concrete gaps.
+3. List 1-5 specific, concrete gaps. Each gap MUST include a citation indicating where the gap applies or what source proves it.
 4. Assign a confidence level: "high" (clear signal), "medium" (some ambiguity), "low" (insufficient info).
 5. Assign a letter grade: A (90+), B (80-89), C (70-79), D (60-69), F (<60).
 
@@ -112,7 +161,7 @@ ${deliverable}
   "rubric": [
     { "criterion": "<name>", "score": <number>, "weight": <number> }
   ],
-  "gaps": ["<gap1>", "<gap2>"],
+  "gaps": ["<gap1 (citation)>", "<gap2 (citation)>"],
   "confidence": "<high|medium|low>"
 }
 \`\`\`
@@ -120,25 +169,7 @@ ${deliverable}
 Respond with ONLY the JSON object, no other text.`;
 }
 
-// ─── LLM Call (pluggable) ──────────────────────────────────────────
-
-async function callLlmJudge(prompt: string): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY ?? process.env.ANTHROPIC_API_KEY;
-  
-  if (!apiKey) {
-    // Fallback: deterministic mock grading for development
-    console.warn('[litmus/grader] No LLM API key — using mock grading');
-    return mockGrade(prompt);
-  }
-
-  // Try OpenAI first (GPT-4o-mini — cheap, fast, good for rubric evaluation)
-  if (process.env.OPENAI_API_KEY) {
-    return callOpenAI(prompt, process.env.OPENAI_API_KEY);
-  }
-
-  // Fallback to Anthropic
-  return callAnthropic(prompt, process.env.ANTHROPIC_API_KEY!);
-}
+// Removed callLlmJudge
 
 async function callOpenAI(prompt: string, apiKey: string): Promise<string> {
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -153,6 +184,7 @@ async function callOpenAI(prompt: string, apiKey: string): Promise<string> {
       temperature: 0,
       max_tokens: 1000,
     }),
+    signal: AbortSignal.timeout(25000), // Architecture: Prevent Event Loop Hangs
   });
 
   if (!response.ok) {
@@ -180,6 +212,7 @@ async function callAnthropic(prompt: string, apiKey: string): Promise<string> {
       messages: [{ role: 'user', content: prompt }],
       temperature: 0,
     }),
+    signal: AbortSignal.timeout(25000), // Architecture: Prevent Event Loop Hangs
   });
 
   if (!response.ok) {
@@ -247,10 +280,10 @@ function fallbackVerdict(rubric: RubricCriterion[]): GradeVerdict {
 
 // ─── Mock Grading ──────────────────────────────────────────────────
 
-function mockGrade(_prompt: string): string {
+function mockGrade(_prompt: string, fixedScore = 62): string {
   return JSON.stringify({
-    score: 62,
-    grade: 'D',
+    score: fixedScore,
+    grade: fixedScore >= 90 ? 'A' : fixedScore >= 80 ? 'B' : fixedScore >= 70 ? 'C' : fixedScore >= 60 ? 'D' : 'F',
     rubric: [
       { criterion: 'Factual accuracy', score: 55, weight: 0.3 },
       { criterion: 'Source citations', score: 40, weight: 0.25 },

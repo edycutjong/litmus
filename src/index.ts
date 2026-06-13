@@ -10,7 +10,7 @@
  * - CROO_MOCK=true — offline mock mode
  */
 
-import { makeClient, isMockMode } from 'croo-core';
+import { makeClient, isMockMode } from '@edycutjong/croo-core';
 import { startLitmusProvider } from './provider.js';
 
 async function main() {

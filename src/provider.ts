@@ -5,8 +5,8 @@
  * and delivers a structured verdict on-chain.
  */
 
-import { runProvider } from 'croo-core';
-import type { Order, Deliverable, NegotiationEvent } from 'croo-core';
+import { runProvider } from '@edycutjong/croo-core';
+import type { Deliverable, Event } from '@edycutjong/croo-core';
 import { gradeDeliverable } from './grader.js';
 import type { GradeRequest, GradeVerdict } from './grader.js';
 
@@ -17,34 +17,62 @@ import type { GradeRequest, GradeVerdict } from './grader.js';
  * @param serviceId - The registered service ID for "Output Grading"
  */
 export async function startLitmusProvider(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any,
   serviceId: string,
-) {
-  return runProvider<GradeRequest, GradeVerdict>(client, {
-    serviceMatch: (event: NegotiationEvent) => {
+): Promise<any> {
+  return runProvider(client, {
+    serviceMatch: (event: Event) => {
       return event.service_id === serviceId;
     },
 
-    work: async (order: Order<GradeRequest>): Promise<Deliverable<GradeVerdict>> => {
-      const input = order.requirement;
-      if (!input?.deliverable) {
-        throw new Error('Missing required field: deliverable');
+    work: async (order: any): Promise<Deliverable<GradeVerdict>> => {
+      const input = order.requirement as GradeRequest;
+      if (!input || (!input.deliverable && !input.fileKey)) {
+        throw new Error('Missing required field: deliverable or fileKey');
       }
 
-      console.log(`[litmus] Order ${order.id}: grading deliverable (${input.deliverable.length} chars)...`);
+      let textToGrade = input.deliverable || '';
 
-      const verdict = await gradeDeliverable(input);
+      // Feature: File Handoff via presigned URLs
+      if (!textToGrade && input.fileKey) {
+        console.log(`[litmus] Order ${order.id}: Fetching file payload for key ${input.fileKey}...`);
+        try {
+          const url = await client.getDownloadURL(input.fileKey);
+          const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+          if (!res.ok) {
+            throw new Error(`Failed to download file payload: ${res.statusText}`);
+          }
+          textToGrade = await res.text();
+        } catch (fetchErr) {
+          console.warn(`[litmus] ⚠️ Failed to fetch fileKey ${input.fileKey}`, fetchErr);
+          throw new Error('Could not retrieve file content for grading.');
+        }
+      }
 
-      console.log(
-        `[litmus] Order ${order.id}: score=${verdict.score}, grade=${verdict.grade}, ` +
-        `gaps=${verdict.gaps.length}, confidence=${verdict.confidence}`,
-      );
+      console.log(`[litmus] Order ${order.id}: grading deliverable (${textToGrade.length} chars)...`);
 
-      return {
-        type: 'schema',
-        data: verdict,
-      };
+      try {
+        const verdict = await gradeDeliverable({
+          ...input,
+          deliverable: textToGrade
+        });
+
+        console.log(
+          `[litmus] Order ${order.id}: score=${verdict.score}, grade=${verdict.grade}, ` +
+          `gaps=${verdict.gaps.length}, confidence=${verdict.confidence}`,
+        );
+
+        return {
+          type: 'schema',
+          data: verdict,
+        };
+      } catch (err: any) {
+        if (err.message === 'SLA_TIMEOUT') {
+          console.warn(`[litmus] Order ${order.id} aborted locally due to SLA timeout.`);
+          throw err;
+        }
+        throw err;
+      }
     },
 
     slaGuardMs: 60_000,
