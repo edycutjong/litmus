@@ -23,7 +23,7 @@
 ## 📸 See it in Action
 
 <div align="center">
-  <img src="docs/readme.png" alt="Litmus Demo" width="100%">
+  <img src="docs/see-in-action.png" alt="Litmus Demo" width="100%">
 </div>
 
 > **The Quality Gate Workflow.** Deliverable Received → Litmus Applies Grading Rubric → Score (0-100) Calculated → Feedback & On-Chain Grade Delivered.
