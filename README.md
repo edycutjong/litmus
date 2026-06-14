@@ -39,6 +39,34 @@ In an autonomous agent economy, output quality varies wildly. How do you trust a
 - 🚧 **Quality Gatekeeper:** Automatically rejects work that falls below the acceptable threshold.
 - ⛓️ **On-Chain Attestation:** Cryptographically signs the grade to ensure the evaluation is immutable and verifiable.
 
+## 🌌 The Constellation — On-Chain A2A Graph
+
+Litmus is the constellation's **quality oracle**: other agents pay it on-chain to grade a deliverable 0–100 against a rubric. A two-model "tribunal" (with a tiebreaker) keeps scoring stable (σ < 4). Verifiable, paid, impartial grading-as-a-service is a primitive a normal API marketplace can't offer.
+
+```mermaid
+graph LR
+    User([Any Agent / User]) -->|hires to grade| L[Litmus 🧪]
+    M[Maestro 🎼] -->|grade + re-grade in its reflection loop| L
+    G[Gauntlet 🧤] -.->|certifies| L
+    classDef hot fill:#F59E0B,stroke:#111,color:#111,font-weight:bold;
+    class L hot;
+```
+
+- **Depth:** Maestro hires Litmus **twice** per pipeline — once to grade, once to re-grade the self-corrected draft — making it a high-traffic A2A node.
+- **Anti-gaming:** rubric weights are validated and Format/Clarity is capped at 15% so agents can't farm a passing grade on style alone.
+
+## 🔗 Live Run Log — On-Chain Proof (Base Mainnet)
+
+Real CAP grading orders Litmus fulfilled as a **provider**.
+
+**Total real CAP orders: _0_** · _last updated: 2026-06-__
+
+| # | Date | Counterparty (requester) | Amount (USDC) | Order ID | Tx (BaseScan) | Score |
+|---|------|--------------------------|---------------|----------|---------------|-------|
+| 1 | _2026-06-__ | _Maestro / external_ | _0.00_ | `_ord_…_` | [0x…](https://basescan.org/tx/0x…) | _N_/100 |
+
+> Order IDs + pay tx are in the provider logs and the CROO dashboard. Delete this note once populated.
+
 ## 🏗️ Architecture & Tech Stack
 
 | Layer | Technology |
@@ -56,7 +84,14 @@ In an autonomous agent economy, output quality varies wildly. How do you trust a
 ### Installation
 1. Clone: `git clone https://github.com/edycutjong/litmus.git`
 2. Install: `npm install`
-3. Run: `npm run dev`
+3. Configure: `cp .env.example .env.local` and fill in your service ID + an LLM key (skip for mock mode)
+
+### ▶️ Run it now — offline mock mode (no wallet, no USDC)
+```bash
+npm install
+CROO_MOCK=true npm run dev   # boots the grader provider with no on-chain calls
+```
+Grading works with **no API key** (deterministic mock grade); set `OPENAI_API_KEY` and/or `ANTHROPIC_API_KEY` to enable the live LLM tribunal. Run `npm run stability` to reproduce the σ < 4 scoring-variance harness.
 
 ## 🧪 Testing & CI
 
@@ -91,6 +126,13 @@ dorahacks-croo-litmus/
 ├── __tests__/         # Vitest test suites
 ├── .github/           # CI workflows
 └── README.md          # You are here
+```
+
+## 🚢 Deploy
+Containerized for any PaaS. Litmus is a background **worker** (connects out to the CROO WebSocket — no inbound port):
+```bash
+docker build -t litmus .
+docker run --env-file .env.local litmus
 ```
 
 ## 📄 License
