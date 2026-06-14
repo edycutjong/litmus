@@ -10,13 +10,13 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --silent --coverage",
     "stability": "tsx scripts/stability.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "audit": "npm audit --audit-level=high || true",
-    "ci": "npm run audit && npm run lint && npm run typecheck && npm run test"
+    "ci": "npm run audit && npm run lint && npm run typecheck && npm run test:coverage"
   },
   "keywords": [
     "croo",
@@ -31,13 +31,16 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@vitest/coverage-v8": "^3.2.6",
+    "@vitest/coverage-v8": "^4.1.8",
     "dotenv": "^17.4.2",
     "eslint": "^9.0.0",
     "license-checker": "^25.0.1",
     "tsx": "^4.0.0",
     "typescript": "^5.8.0",
     "typescript-eslint": "^8.0.0",
-    "vitest": "^3.2.0"
+    "vitest": "^4.1.8"
+  },
+  "overrides": {
+    "ws": "^8.20.1"
   }
 }

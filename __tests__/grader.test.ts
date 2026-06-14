@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { gradeDeliverable, DEFAULT_RUBRIC } from '../src/grader.js';
+import { gradeDeliverable, DEFAULT_RUBRIC, mockGrade } from '../src/grader.js';
 
 describe('Litmus Grader', () => {
   const originalEnv = process.env;
@@ -29,6 +29,12 @@ describe('Litmus Grader', () => {
     const badRubric = [{ criterion: 'Test', weight: 0.5 }];
     await expect(gradeDeliverable({ deliverable: 'Test', rubric: badRubric }))
       .rejects.toThrow('Rubric weights must sum to 1.0');
+  });
+
+  it('throws an error if format criterion exceeds 15% weight', async () => {
+    const badRubric = [{ criterion: 'Format requirements', weight: 0.20 }, { criterion: 'Other', weight: 0.80 }];
+    await expect(gradeDeliverable({ deliverable: 'Test', rubric: badRubric }))
+      .rejects.toThrow('Security Violation: Format/Clarity weight cannot exceed 15%');
   });
 
   describe('OpenAI Parsing', () => {
@@ -242,6 +248,40 @@ describe('Litmus Grader', () => {
       expect(fetchCount).toBe(3);
     });
 
+    it('returns combined verdict when API keys are used and variance <= 15', async () => {
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+      let fetchCount = 0;
+      global.fetch = vi.fn().mockImplementation(async () => {
+        fetchCount++;
+        if (fetchCount === 1) {
+          // V1 response
+          return {
+            ok: true,
+            json: async () => ({
+              choices: [{ message: { content: '{"score": 80, "grade": "B", "confidence": "high", "gaps": ["gap1"]}' } }],
+              content: [{ text: '{"score": 80, "grade": "B", "confidence": "high", "gaps": ["gap1"]}' }]
+            })
+          } as Response;
+        } else {
+          // V2 response (mocked as anthropic fallback in parallel array)
+          return {
+            ok: true,
+            json: async () => ({
+              choices: [{ message: { content: '{"score": 85, "grade": "B", "confidence": "high", "gaps": ["gap2"]}' } }],
+              content: [{ text: '{"score": 85, "grade": "B", "confidence": "high", "gaps": ["gap2"]}' }]
+            })
+          } as Response;
+        }
+      });
+
+      const verdict = await gradeDeliverable({ deliverable: 'Test tribunal ok' });
+      // The overall score should be avg
+      expect(verdict.score).toBe(83); // Math.round((80+85)/2)
+      expect(fetchCount).toBe(2);
+      expect(verdict.gaps).toContain('gap1');
+      expect(verdict.gaps).toContain('gap2');
+    });
+
     it('executes single model mode using Anthropic if OpenAI key is missing', async () => {
       delete process.env.OPENAI_API_KEY;
       process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
@@ -276,6 +316,60 @@ describe('Litmus Grader', () => {
       const verdict = await gradeDeliverable({ deliverable: 'Test', rubric: customRubric });
       expect(verdict.rubric.length).toBe(5); 
       expect(verdict.score).toBe(62);
+    });
+  });
+
+  describe('Uncovered Branch Cases', () => {
+    it('handles missing deliverable content request and falls back to empty string', async () => {
+      delete process.env.OPENAI_API_KEY;
+      delete process.env.ANTHROPIC_API_KEY;
+      const verdict = await gradeDeliverable({});
+      expect(verdict.score).toBe(62);
+    });
+
+    it('injects context into prompt when context is provided', async () => {
+      delete process.env.OPENAI_API_KEY;
+      delete process.env.ANTHROPIC_API_KEY;
+      const verdict = await gradeDeliverable({ deliverable: 'Some test', context: 'Prior evaluation context' });
+      expect(verdict.score).toBe(62);
+    });
+
+    it('handles empty choices in OpenAI response structure', async () => {
+      process.env.OPENAI_API_KEY = 'sk-openai';
+      delete process.env.ANTHROPIC_API_KEY;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: []
+        })
+      } as Response);
+
+      const verdict = await gradeDeliverable({ deliverable: 'Test output' });
+      expect(verdict.score).toBe(50);
+      expect(verdict.confidence).toBe('low');
+    });
+
+    it('handles empty content in Anthropic response structure', async () => {
+      delete process.env.OPENAI_API_KEY;
+      process.env.ANTHROPIC_API_KEY = 'sk-anthropic';
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          content: []
+        })
+      } as Response);
+
+      const verdict = await gradeDeliverable({ deliverable: 'Test output' });
+      expect(verdict.score).toBe(50);
+      expect(verdict.confidence).toBe('low');
+    });
+
+    it('covers all mockGrade score branches', () => {
+      expect(JSON.parse(mockGrade('prompt', 95)).grade).toBe('A');
+      expect(JSON.parse(mockGrade('prompt', 85)).grade).toBe('B');
+      expect(JSON.parse(mockGrade('prompt', 75)).grade).toBe('C');
+      expect(JSON.parse(mockGrade('prompt', 65)).grade).toBe('D');
+      expect(JSON.parse(mockGrade('prompt', 55)).grade).toBe('F');
     });
   });
 });

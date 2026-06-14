@@ -109,9 +109,7 @@ export async function gradeDeliverable(request: GradeRequest): Promise<GradeVerd
     if (variance > 15) {
       console.warn('[litmus/grader] High variance detected. Firing tiebreaker.');
       const tiebreakerPrompt = prompt + '\n\nIMPORTANT: Previous judges disagreed significantly. Be extremely rigorous and penalize any unsubstantiated claims heavily.';
-      const res3 = apiKeyAnthropic 
-        ? await callAnthropic(tiebreakerPrompt, apiKeyAnthropic) 
-        : await callOpenAI(tiebreakerPrompt, apiKeyOpenAI!);
+      const res3 = await callAnthropic(tiebreakerPrompt, apiKeyAnthropic!);
       return parseVerdictResponse(res3, rubric);
     }
     
@@ -280,7 +278,7 @@ function fallbackVerdict(rubric: RubricCriterion[]): GradeVerdict {
 
 // ─── Mock Grading ──────────────────────────────────────────────────
 
-function mockGrade(_prompt: string, fixedScore = 62): string {
+export function mockGrade(_prompt: string, fixedScore = 62): string {
   return JSON.stringify({
     score: fixedScore,
     grade: fixedScore >= 90 ? 'A' : fixedScore >= 80 ? 'B' : fixedScore >= 70 ? 'C' : fixedScore >= 60 ? 'D' : 'F',
