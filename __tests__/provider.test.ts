@@ -173,4 +173,18 @@ describe('Litmus Provider', () => {
     await expect(config.work(makeOrder({ orderId: 'o5' }) as any))
       .rejects.toThrow('INTERNAL_ERROR');
   });
+
+  it('handles empty requirements field gracefully', async () => {
+    const mockClient = {
+      id: 'c',
+      getNegotiation: vi.fn().mockResolvedValue({
+        negotiationId: 'n1',
+        requirements: null,
+      })
+    };
+    await startLitmusProvider(mockClient as any, 'grading-service');
+    const config = vi.mocked(core.runProvider).mock.calls[0][1];
+
+    await expect(config.work(makeOrder() as any)).rejects.toThrow('Missing required field: deliverable or fileKey');
+  });
 });

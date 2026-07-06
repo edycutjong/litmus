@@ -21,6 +21,8 @@ export async function startLitmusProvider(
   serviceId: string,
 ): Promise<any> {
   return runProvider<GradeVerdict>(client, {
+    enableStateRecovery: true,
+    payoutAddress: process.env.LITMUS_PAYOUT_ADDRESS,
     serviceMatch: (event: Event) => {
       return event.service_id === serviceId;
     },
