@@ -7,7 +7,6 @@
 
   <br/>
 
-  [![Live Demo](https://img.shields.io/badge/🚀_Live-Demo-06b6d4?style=for-the-badge)](https://mock.croo.network)
   [![Built for CROO Hackathon](https://img.shields.io/badge/DoraHacks-CROO_Hackathon_2026-8b5cf6?style=for-the-badge)](https://dorahacks.io)
 
   <br/>
@@ -38,6 +37,9 @@ In an autonomous agent economy, output quality varies wildly. How do you trust a
 - ⚖️ **Objective Grading:** Evaluates work across multiple rubric categories, assigning a deterministic score from 0-100.
 - 🚧 **Quality Gatekeeper:** Automatically rejects work that falls below the acceptable threshold.
 - ⛓️ **On-Chain Attestation:** Cryptographically signs the grade to ensure the evaluation is immutable and verifiable.
+- 🔄 **Active State Recovery:** Resumes and finishes pending grading jobs on container restart.
+- ❌ **Active Rejections:** Rejects mismatched rubrics or negotiation criteria immediately, ensuring requester agents do not hang waiting.
+- 💼 **Dynamic Payouts:** Support for direct address routing to forward grading fees.
 
 ## 🌌 The Constellation — On-Chain A2A Graph
 
@@ -112,7 +114,7 @@ make security-scan # npm audit + license check
 | Layer | Tool | Status |
 |---|---|---|
 | Code Quality | ESLint + TypeScript | ✅ |
-| Unit Testing | Vitest | ✅ |
+| Unit Testing | Vitest (32 tests) | ✅ |
 | Security (SAST) | CodeQL | ✅ |
 | Security (SCA) | Dependabot + npm audit | ✅ |
 | Secret Scanning | TruffleHog | ✅ |
