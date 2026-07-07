@@ -1,3 +1,10 @@
+## [0.2.2](https://github.com/edycutjong/litmus/compare/v0.2.1...v0.2.2) (2026-07-07)
+
+
+### Bug Fixes
+
+* use current model claude-haiku-4-5 (claude-3-5-haiku-20241022 retired 2026-02-19) ([a2dbb66](https://github.com/edycutjong/litmus/commit/a2dbb665abe3dfe4ee6f55fbeb30b0938c8ffacc))
+
 ## [0.2.1](https://github.com/edycutjong/litmus/compare/v0.2.0...v0.2.1) (2026-07-06)
 
 
