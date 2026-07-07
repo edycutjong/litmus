@@ -61,13 +61,12 @@ graph LR
 
 Real CAP grading orders Litmus fulfilled as a **provider**.
 
-**Total real CAP orders: _0_** · _last updated: 2026-06-__
+**Total real CAP orders: 2** · _last updated: 2026-07-07_ · two-model tribunal scoring; each cell is `[pay tx]` · `[deliver tx]` on Base Mainnet.
 
-| # | Date | Counterparty (requester) | Amount (USDC) | Order ID | Tx (BaseScan) | Score |
-|---|------|--------------------------|---------------|----------|---------------|-------|
-| 1 | _2026-06-__ | _Maestro / external_ | _0.00_ | `_ord_…_` | [0x…](https://basescan.org/tx/0x…) | _N_/100 |
-
-> Order IDs + pay tx are in the provider logs and the CROO dashboard. Delete this note once populated.
+| # | Date | Counterparty (requester) | USDC | Order ID | Tx (BaseScan) | Score |
+|---|------|--------------------------|------|----------|---------------|-------|
+| 1 | 2026-07-07 | Maestro (grade) | 0.05 | `9da4458a` | [pay](https://basescan.org/tx/0x920d1265b48f2d7552c15b4b0c9bec983244a86c69fad152911fb3827a1b401a) · [deliver](https://basescan.org/tx/0x0fe4027fbd04978498bf3ece48008735948957c5255aaf457c8d321b8ae56835) | 69/100 (V1 75 · V2 62) |
+| 2 | 2026-07-07 | Maestro (fallback grade) | 0.05 | `3f72221e` | [pay](https://basescan.org/tx/0xfc1099b5e9b589097c799219a129afcd4154eac453caab2c0731704d8048b3a1) · [deliver](https://basescan.org/tx/0x51d38da2a6ef96d82ff875c2b129f03670d196ed28b50f7f8fb6ee0d84a184bc) | 76/100 |
 
 ## 🏗️ Architecture & Tech Stack
 
