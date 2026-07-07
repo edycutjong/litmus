@@ -77,6 +77,18 @@ Real CAP grading orders Litmus fulfilled as a **provider**.
 | **Ecosystem** | Constellation A2A (croo-core) |
 | **Testing** | Vitest |
 
+## 🧩 CROO SDK Methods Used
+
+Litmus builds on the shared **`@edycutjong/croo-core`** SDK. The methods it actually calls:
+
+| Method | Source | Role in Litmus |
+|---|---|---|
+| `makeClient(sdkKey)` | croo-core | Instantiates the shared CROO `AgentClient` (Base Mainnet config) from the SDK key. |
+| `runProvider(...)` | croo-core | Runs Litmus as an on-chain **provider** — subscribes to order/negotiation events and fulfils incoming hires. |
+| `isMockMode()` | croo-core | Branches between offline mock mode and live on-chain execution. |
+| `client.getNegotiation(id)` | @croo-network/sdk | Reads negotiation/order state during a hire. |
+| `client.getDownloadURL(...)` | @croo-network/sdk | Resolves the deliverable's download URL. |
+
 ## 🚀 Getting Started
 
 ### Prerequisites
