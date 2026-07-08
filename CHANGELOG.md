@@ -1,3 +1,10 @@
+# [0.3.0](https://github.com/edycutjong/litmus/compare/v0.2.2...v0.3.0) (2026-07-08)
+
+
+### Features
+
+* **icon:** flask-conical glyph + Agent Store badge, hire example, community files ([f96409d](https://github.com/edycutjong/litmus/commit/f96409d43f5518ea8b0397cd308911a039bade03))
+
 ## [0.2.2](https://github.com/edycutjong/litmus/compare/v0.2.1...v0.2.2) (2026-07-07)
 
 
