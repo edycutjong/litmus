@@ -1,3 +1,10 @@
+## [0.3.1](https://github.com/edycutjong/litmus/compare/v0.3.0...v0.3.1) (2026-07-08)
+
+
+### Bug Fixes
+
+* **icon:** animated icon renders on GitHub (SMIL + real transform) ([1ea8eca](https://github.com/edycutjong/litmus/commit/1ea8ecaba8e35f077049059406e4659996fde801))
+
 # [0.3.0](https://github.com/edycutjong/litmus/compare/v0.2.2...v0.3.0) (2026-07-08)
 
 

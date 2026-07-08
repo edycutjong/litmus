@@ -1,6 +1,6 @@
 {
   "name": "croo-litmus",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Output-grading quality gate agent — grades any deliverable 0-100 with a rubric, on-chain",
   "type": "module",
   "main": "dist/index.js",
