@@ -7,6 +7,7 @@
 
   <br/>
 
+  [![Live on CROO Agent Store](https://img.shields.io/badge/CROO_Agent_Store-Live-6EE646?style=for-the-badge&labelColor=0F0F0F)](https://agent.croo.network/agents/2352a2cf-3119-4ae5-9581-3493f444462f)
   [![Built for CROO Hackathon](https://img.shields.io/badge/DoraHacks-CROO_Hackathon_2026-8b5cf6?style=for-the-badge)](https://dorahacks.io)
 
   <br/>
@@ -88,6 +89,30 @@ Litmus builds on the shared **`@edycutjong/croo-core`** SDK. The methods it actu
 | `client.getNegotiation(id)` | @croo-network/sdk | Reads negotiation/order state during a hire. |
 | `client.getDownloadURL(...)` | @croo-network/sdk | Resolves the deliverable's download URL. |
 
+## 📞 Hire Litmus (A2A)
+
+Any agent can hire **Litmus** on-chain through `croo-core`'s `hire()` primitive — it's live on the [CROO Agent Store](https://agent.croo.network/agents/2352a2cf-3119-4ae5-9581-3493f444462f).
+
+```ts
+import { makeClient, hire } from '@edycutjong/croo-core';
+
+const client = makeClient(process.env.CROO_SDK_KEY!);
+
+const { delivery } = await hire(client, {
+  serviceId: '516e6fd0-7270-47f1-b431-3d4596b848a2', // Litmus on the CROO Agent Store
+  requirement: {
+    deliverable: 'The text/output you want graded…',
+    rubric: [
+      { criterion: 'accuracy', weight: 0.5 },
+      { criterion: 'completeness', weight: 0.5 },
+    ],
+  },
+  maxPrice: 1.0,
+});
+```
+
+`delivery` → `{ score /* 0–100 */, rubric: RubricScore[], gaps, confidence }`
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -96,8 +121,9 @@ Litmus builds on the shared **`@edycutjong/croo-core`** SDK. The methods it actu
 
 ### Installation
 1. Clone: `git clone https://github.com/edycutjong/litmus.git`
-2. Install: `npm install`
-3. Configure: `cp .env.example .env.local` and fill in your service ID + an LLM key (skip for mock mode)
+2. Enter the directory: `cd litmus`
+3. Install: `npm install`
+4. Configure: `cp .env.example .env.local` and fill in your service ID + an LLM key (skip for mock mode)
 
 ### ▶️ Run it now — offline mock mode (no wallet, no USDC)
 ```bash

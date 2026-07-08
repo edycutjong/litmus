@@ -1,5 +1,5 @@
 {
-  "name": "dorahacks-croo-litmus",
+  "name": "croo-litmus",
   "version": "0.2.2",
   "description": "Output-grading quality gate agent — grades any deliverable 0-100 with a rubric, on-chain",
   "type": "module",
