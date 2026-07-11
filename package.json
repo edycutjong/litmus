@@ -27,13 +27,13 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@edycutjong/croo-core": "^0.4.0"
+    "@edycutjong/croo-core": "^0.5.1"
   },
   "devDependencies": {
     "@types/node": "^26.1.0",
     "@vitest/coverage-v8": "^4.1.8",
     "dotenv": "^17.4.2",
-    "eslint": "^9.0.0",
+    "eslint": "^10.0.0",
     "license-checker": "^25.0.1",
     "tsx": "^4.0.0",
     "typescript": "^5.8.0",
