@@ -606,6 +606,10 @@
     if(m.x<-20) m.x=W+20; else if(m.x>W+20) m.x=-20;
     if(m.y<-20) m.y=H+20; else if(m.y>H+20) m.y=-20; } }
   function moteDraw(a){ for(var i=0;i<a.length;i++) dot(a[i].x,a[i].y,a[i].r,A,.16); }
+  /* Cyclic figures fade in before they act and out after they finish, so the
+     reset to fresh random values lands while the element is invisible.
+     Without this the loop visibly pops back to its opening state. */
+  function env(t){ return t<.12 ? ease(t/.12) : (t>.90 ? ease((1-t)/.10) : 1); }
 
   /* THE FIGURE ZONE. Copy in the hero is left-aligned inside a 1020px wrap, so
      the whitespace a figure may occupy is the right-hand third — a line drawn
@@ -623,7 +627,7 @@
 
   function MOTIF(W,H){
     var x0=FX-FW*.5, x1=FX+FW*.5, mo=motes(9), rows=[], i;
-    function mk(y){ return {y:y, a:rnd(.10,.40), b:rnd(.60,.92), t:0, dur:rnd(160,240)}; }
+    function mk(y){ return {y:y, a:rnd(.10,.40), b:rnd(.60,.92), t:0, dur:rnd(210,300)}; }
     for(i=0;i<4;i++){ var r=mk(FY-FH*.5+FH*(i+.5)/4); r.t=Math.random(); rows.push(r); }
     function X(f){ return x0+(x1-x0)*f; }
     return {
@@ -635,15 +639,16 @@
       draw:function(){
         moteDraw(mo);
         seg(X(0),FY-FH*.62,X(0),FY+FH*.62,A,.13); seg(X(1),FY-FH*.62,X(1),FY+FH*.62,A,.13);
-        for(var i=0;i<rows.length;i++){ var r=rows[i], y=r.y;
+        /* the two rails are the scale and persist; only the grading fades */
+        for(var i=0;i<rows.length;i++){ var r=rows[i], y=r.y, v=env(r.t);
           var p1=X(r.a), p2=X(r.b), mid=(p1+p2)/2;
-          var e=ease(Math.max(0,Math.min(1,(r.t-.44)/.36)));
+          var e=ease(Math.max(0,Math.min(1,(r.t-.45)/.33)));
           var q1=p1+(mid-p1)*e, q2=p2+(mid-p2)*e;
-          seg(q1,y,q2,y,A,.16);
-          seg(q1,y-4,q1,y+4,A,.26); seg(q2,y-4,q2,y+4,A,.26);
-          dot(q1,y,2,A,.34); dot(q2,y,2,A,.34);
-          if(r.t>.80){ var f=1-(r.t-.80)/.20;
-            ring(mid,y,3+(1-f)*15,G,f*.30); dot(mid,y,2.2,G,f*.50); } }
+          seg(q1,y,q2,y,A,.16*v);
+          seg(q1,y-4,q1,y+4,A,.26*v); seg(q2,y-4,q2,y+4,A,.26*v);
+          dot(q1,y,2,A,.34*v); dot(q2,y,2,A,.34*v);
+          if(r.t>.78){ var f=Math.max(0,1-(r.t-.78)/.16);
+            ring(mid,y,3+(1-f)*15,G,f*.30*v); dot(mid,y,2.2,G,f*.50*v); } }
       }
     };
   }
